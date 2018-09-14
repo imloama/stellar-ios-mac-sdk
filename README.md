@@ -19,7 +19,7 @@ To integrate stellar SDK into your Xcode project using CocoaPods, specify it in 
 use_frameworks!
 
 target '<Your Target Name>' do
-    pod 'stellar-ios-mac-sdk', '~> 1.1.4'
+    pod 'stellar-ios-mac-sdk', '~> 1.4.0'
 end
 ```
 
@@ -29,6 +29,25 @@ Then, run the following command:
 $ pod repo update
 $ pod install
 ```
+
+### Carthage
+
+[Carthage](https://github.com/Carthage/Carthage) is a decentralized dependency manager that builds your dependencies and provides you with binary frameworks.
+
+You can install Carthage with [Homebrew](https://brew.sh/) using the following command:
+
+```bash
+$ brew update
+$ brew install carthage
+```
+
+To integrate stellar-ios-mac-sdk into your Xcode project using Carthage, specify it in your `Cartfile`:
+
+```ogdl
+github "soneso/stellar-ios-mac-sdk" ~> 1.1.5
+```
+
+Run `carthage update` to build the framework and drag the build `stellar-ios-mac-sdk.framework` into your Xcode project.
 
 ### Manual
 
@@ -61,7 +80,8 @@ print("Secret Seed: " + keyPair.secretSeed)
 ```
 
 #### 1.2 Deterministic generation
-See [Key Derivation Methods for Stellar Accounts](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0005.md)
+
+The Stellar Ecosystem Proposal [SEP-005 Key Derivation Methods for Stellar Accounts](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0005.md) describes methods for key derivation for Stellar. This improves key storage and moving keys between wallets and apps.
 
 Generate mnemonic
 ```swift
@@ -104,9 +124,11 @@ let keyPair1 = try! KeyPair.init(seed: Seed(bytes: account1.raw.bytes))
 ```      
 
 ### 2. Create an account
+
 After the key pair generation, you have already got the address, but it is not activated until someone transfers at least 1 lumen into it.
 
 #### 2.1 Testnet
+
 If you want to play in the Stellar test network, the sdk can ask Friendbot to create an account for you as shown below:
 
 ```swift
@@ -122,6 +144,7 @@ sdk.accounts.createTestAccount(accountId: keyPair.accountId) { (response) -> (Vo
 ```
 
 #### 2.2 Public net
+
 On the other hand, if you would like to create an account in the public net, you should buy some Stellar Lumens from an exchange. When you withdraw the Lumens into your new account, the exchange will automatically create the account for you. However, if you want to create an account from another account of your own, you may run the following code:
 
 ```swift
@@ -153,6 +176,7 @@ try sdk.transactions.submitTransaction(transaction: transaction) { (response) ->
 
 ### 3. Check account
 #### 3.1 Basic info
+
 After creating the account, we may check the basic information of the account.
 
 ```swift
@@ -190,6 +214,7 @@ sdk.accounts.getAccountDetails(accountId: keyPair.accountId) { (response) -> (Vo
 ```
 
 #### 3.2 Check payments
+
 You can check the most recent payments by:
 
 ```swift
@@ -238,6 +263,7 @@ sdk.payments.stream(for: .paymentsForAccount(account: destinationAccountKeyPair.
 }
 ```
 #### 3.3 Check others
+
 Just like payments, you you check `assets`, `transactions`, `effects`, `offers`, `operations`, `ledgers` etc.  by:
 
 ```swift
@@ -280,13 +306,232 @@ try sdk.transactions.submitTransaction(transaction: transaction) { (response) ->
 }
 ```
 
+### 5. Using a federation server
+
+The Stellar federation protocol defined in [SEP-002](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0002.md) maps Stellar addresses to more information about a given user. It’s a way for Stellar client software to resolve email-like addresses such as:
+
+name*yourdomain.com 
+
+into account IDs like: 
+
+GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU 
+
+Stellar addresses provide an easy way for users to share payment details by using a syntax that interoperates across different domains and providers.
+
+#### 5.1 Get federation server address for a domain
+
+Get the federation of your domain:
+
+```swift
+Federation.forDomain(domain: "https://YOUR_DOMAIN") { (response) -> (Void) in
+    switch response {
+    case .success(let federation):
+        //use the federation object to map your infos
+    case .failure(_):
+        //something went wrong
+    }
+}
+```
+
+#### 5.2 Resolve a federation address to an account id
+
+Resolve your addresses:
+
+```swift
+let federation = Federation(federationAddress: "https://YOUR_FEDERATION_SERVER")
+federation.resolve(address: "bob*YOUR_DOMAIN") { (response) -> (Void) in
+    switch response {
+    case .success(let federationResponse):
+        if let accountId = federationResponse.accountId {
+            // use the account id
+        } else {
+            // there is no account id corresponding to the given address
+        }
+    case .failure(_):
+        // something went wrong
+    }
+}
+```
+
+### 6. Anchor-Client interoperability
+
+The Stellar Ecosystem Proposal [SEP-006](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0006.md) defines the standard way for anchors and wallets to interact on behalf of users. This improves user experience by allowing wallets and other clients to interact with anchors directly without the user needing to leave the wallet to go to the anchor's site.
+
+This protocol requires anchors to implement endpoints on their TRANSFER_SERVER. An anchor must define the location of their transfer server in their stellar.toml. This is how a wallet knows where to find the anchor's server.
+
+Example: TRANSFER_SERVER="https://api.example.com"
+
+#### 6.1 Get the TransferServerService for a domain
+
+Get the TransferServerService for your domain:
+
+```swift
+TransferServerService.forDomain(domain: "https://YOUR_DOMAIN") { (response) -> (Void) in
+    switch response {
+        case .success(let transferServerService):
+	        // use the transferServerService object to call other operations
+        case .failure(_):
+	        // something went wrong
+    }
+}
+```
+
+#### 6.2 Deposit external assets with an anchor
+
+A deposit is when a user sends an external token (BTC via Bitcoin, USD via bank transfer, etc...) to an address held by an anchor. In turn, the anchor sends an equal amount of tokens on the Stellar network (minus fees) to the user's Stellar account.
+The deposit endpoint allows a wallet to get deposit information from an anchor, so a user has all the information needed to initiate a deposit. It also lets the anchor specify additional information (if desired) that the user must submit via the /customer endpoint to be able to deposit.
+
+```swift
+let request = DepositRequest(assetCode: "BTC", account: "GAK7I2E6PVBFF27NU5MRY6UXGDWAJT4PF2AH46NUWLFJFFVLOZIEIO4Q")
+transferServerService.deposit(request: request) { (response) -> (Void) in
+    switch response {
+        case .success(let response):
+	       // deposit was sent with success
+        case .failure(_):
+	       // something went wrong
+    }
+}
+```
+
+#### 6.3 Withdraw assets from an anchor
+
+This operation allows a user to redeem an asset currently on the Stellar network for the real asset (BTC, USD, stock, etc...) via the anchor of the Stellar asset.
+The withdraw endpoint allows a wallet to get withdrawal information from an anchor, so a user has all the information needed to initiate a withdrawal. It also lets the anchor specify additional information (if desired) that the user must submit via the /customer endpoint to be able to withdraw.
+
+```swift
+let request = WithdrawRequest(type: "crypto", assetCode: "BTC", dest: "GAK7I2E6PVBFF27NU5MRY6UXGDWAJT4PF2AH46NUWLFJFFVLOZIEIO4Q")
+transferServerService.withdraw(request: request) { (response) -> (Void) in
+	switch response {
+	case .success(let info):
+		// the withdraw operation completed successfully
+	case .failure(_):
+	        // something went wrong
+	}
+}
+```
+
+#### 6.4 Communicate deposit & withdrawal fee structure for an anchor to the user
+
+Allows an anchor to communicate basic info about what their TRANSFER_SERVER supports to wallets and clients.
+
+```swift
+transferServerService.info { (response) -> (Void) in
+	switch response {
+	case .success(let info):
+		// info returned successfully
+	case .failure(_):
+		// something went wrong
+	}
+}
+```
+
+#### 6.5 Using the transaction history endpoint
+
+The transaction history endpoint helps anchors enable a better experience for users using an external wallet. With it, wallets can display the status of deposits and withdrawals while they process and a history of past transactions with the anchor. It's only for transactions that are deposits to or withdrawals from the anchor.
+
+```swift
+let request = AnchorTransactionsRequest(assetCode: "BTC", account: "GAK7I2E6PVBFF27NU5MRY6UXGDWAJT4PF2AH46NUWLFJFFVLOZIEIO4Q")
+transferServerService.getTransactions(request: request) { (response) -> (Void) in
+	switch response {
+	case .success(let transactions):
+		// the past transactions returned successfully
+	case .failure(_):
+		// something went wrong
+	}
+}
+```
+
+#### 6.7 Delete all KYC info about customer
+
+Delete all personal information that the anchor has stored about a given customer. [account] is the Stellar account ID (G...) of the customer to delete. This request must be authenticated (via SEP-10) as coming from the owner of the account that will be deleted.
+
+```swift
+transferServerService.deleteCustomerInfo(account: "GAK7I2E6PVBFF27NU5MRY6UXGDWAJT4PF2AH46NUWLFJFFVLOZIEIO4Q") { (response) -> (Void) in
+	switch response {
+	case .success:
+	        // all information for the given account was deleted successfully
+	case .failure(_):
+	        // something went wrong
+	}
+}
+```
+
+### 7. URI Scheme to facilitate delegated signing
+
+The Stellar Ecosystem Proposal [SEP-007](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0007.md) introduces a URI Scheme that can be used to generate a URI that will serve as a request to sign a transaction. The URI (request) will typically be signed by the user’s trusted wallet where she stores her secret key(s).
+
+#### 7.1 Generate a URI for sign transaction.
+
+Generate a URI that will serve as a request to sign a transaction. The URI (request) will typically be signed by the user’s trusted wallet where he stores his secret key(s).
+
+```swift
+sdk.accounts.getAccountDetails(accountId: "GAK7I2E6PVBFF27NU5MRY6UXGDWAJT4PF2AH46NUWLFJFFVLOZIEIO4Q") { (response) -> (Void) in
+    switch response {
+    case .success(let data):
+        // create the payment operation
+        let paymentOperation = PaymentOperation(sourceAccount: sourceAccountKeyPair,
+                                                destination: destinationAccountKeyPair,
+                                                asset: Asset(type: AssetType.ASSET_TYPE_NATIVE)!,
+                                                amount: 1.5)
+        
+        // create the transaction containing the payment operation
+        let transaction = try Transaction(sourceAccount: accountResponse,
+                                          operations: [paymentOperation],
+                                          memo: Memo.none,
+                                          timeBounds:nil)
+        // create the URIScheme object
+        let uriSchemeBuilder = URIScheme()
+        
+        // get the URI with your transactionXDR
+        let uriScheme = uriSchemeBuilder.getSignTransactionURI(transactionXDR: transaction.transactionXDR)
+        
+    case .failure(let error):
+        //
+    }
+}
+```
+
+#### 7.2 Generate a URI for pay operation
+
+Generate a URI that will serve as a request to pay a specific address with a specific asset, regardless of the source asset used by the payer.
+
+```swift
+let uriSchemeBuilder = URIScheme()
+let uriScheme = uriSchemeBuilder.getPayOperationURI(accountID: "GAK7I2E6PVBFF27NU5MRY6UXGDWAJT4PF2AH46NUWLFJFFVLOZIEIO4Q", amount: 100, assetCode: "BTC")
+```
+
+#### 7.3 Sign a transaction from a giver URI
+
+Signs a transaction from a URI and sends it to the stellar network.
+
+```swift
+uriBuilder.signTransaction(forURL: uri, signerKeyPair: keyPair, transactionConfirmation: { (transaction) -> (Bool) in
+    // here the transaction from the uri can be checked and confirmed if the signing should continue
+    return true
+}) { (response) -> (Void) in
+    switch response {
+    case .success:
+    // the transaction was successfully signed
+    case .failure(error: let error):
+        // the transaction wasn't valid or it didn't pass the confirmation
+}
+```
+
 ## Documentation and Examples
 
-You can find documentation and examples in the [docs](https://github.com/Soneso/stellar-ios-mac-sdk/tree/master/docs) folder.
+You can find more documentation and examples in the [docs](https://github.com/Soneso/stellar-ios-mac-sdk/tree/master/docs) folder.
 
 ## Sample IOS app
 
 Satraj from BlockEQ created an [open source iOS wallet](https://github.com/Block-Equity/stellar-ios-wallet) for Stellar, that uses our sdk. Thank you Satraj for your contribution to this project! 
+
+## Stellar Ecosystem Proposals (SEPs) implemented
+
+- [SEP-002](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0002.md) - Federation protocol
+- [SEP-005](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0005.md) - Key Derivation Methods for Stellar Accounts
+- [SEP-006](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0006.md) - Anchor/Client interoperability
+- [SEP-007](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0007.md) - URI Scheme to facilitate delegated signing
+
 
 ## How to contribute
 
@@ -299,4 +544,4 @@ Then please [sign the Contributor License Agreement](https://goo.gl/forms/hS2KOI
 stellar-ios-mac-sdk is licensed under an Apache-2.0 license. See the [LICENSE](https://github.com/soneso/stellar-ios-mac-sdk/blob/master/LICENSE) file for details.
 
 ## Donations
-Send lumens to: GBD7Z2JSVGD2CWNMULKEROA75E6QXCAIERITPICSV77VMRDXNWIXNGLL
+Send lumens to: GANSYJ64BTHYFM6BAJEWXYLVSZVSHYZFPW4DIQDWJL5BOT6O6GUE7JM5

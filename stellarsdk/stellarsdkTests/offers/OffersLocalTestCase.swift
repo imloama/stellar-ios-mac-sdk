@@ -76,7 +76,7 @@ class OffersLocalTestCase: XCTestCase {
                 XCTAssertEqual(offer.links.seller.href, "https://horizon-testnet.stellar.org/accounts/GCJ34JYMXNI7N55YREWAACMMZECOMTPIYDTFCQBWPUP7BLJQDDTVGUW4")
                 XCTAssertNil(offer.links.seller.templated)
                 
-                XCTAssertEqual(offer.id, "121")
+                XCTAssertEqual(offer.id, 121)
                 XCTAssertEqual(offer.pagingToken, "121")
                 XCTAssertEqual(offer.seller, "GCJ34JYMXNI7N55YREWAACMMZECOMTPIYDTFCQBWPUP7BLJQDDTVGUW4")
                 XCTAssertEqual(offer.selling.assetType, AssetTypeAsString.CREDIT_ALPHANUM4)
@@ -124,7 +124,7 @@ class OffersLocalTestCase: XCTestCase {
                         "href": "https://horizon-testnet.stellar.org/accounts/GCJ34JYMXNI7N55YREWAACMMZECOMTPIYDTFCQBWPUP7BLJQDDTVGUW4"
                     }
                 },
-                "id": "121",
+                "id": 121,
                 "paging_token": "121",
                 "seller": "GCJ34JYMXNI7N55YREWAACMMZECOMTPIYDTFCQBWPUP7BLJQDDTVGUW4",
                 "selling": {
