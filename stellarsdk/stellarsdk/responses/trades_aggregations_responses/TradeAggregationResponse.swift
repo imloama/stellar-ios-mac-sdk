@@ -39,6 +39,11 @@ public class TradeAggregationResponse: NSObject, Decodable {
     /// price as seen on last trade aggregated.
     public var closePrice:String
     
+    public var highR: [String:String]
+    public var lowR: [String:String]
+    public var openR: [String:String]
+    public var closeR: [String:String]
+    
     private enum CodingKeys: String, CodingKey {
         
         case timestamp
@@ -50,6 +55,10 @@ public class TradeAggregationResponse: NSObject, Decodable {
         case lowPrice = "low"
         case openPrice = "open"
         case closePrice = "close"
+        case highR = "high_r"
+        case lowR = "low_r"
+        case openR = "open_r"
+        case closeR = "close_r"
     }
     
     /**
@@ -69,5 +78,9 @@ public class TradeAggregationResponse: NSObject, Decodable {
         lowPrice = try values.decode(String.self, forKey: .lowPrice)
         openPrice = try values.decode(String.self, forKey: .openPrice)
         closePrice = try values.decode(String.self, forKey: .closePrice)
+        highR = try values.decode([String: String].self, forKey: .highR)
+        lowR = try values.decode([String: String].self, forKey: .lowR)
+        openR = try values.decode([String: String].self, forKey: .openR)
+        closeR = try values.decode([String: String].self, forKey: .closeR)
     }
 }

@@ -51,9 +51,9 @@ public class PathPaymentOperationResponse: OperationResponse {
         case assetType = "asset_type"
         case assetCode = "asset_code"
         case assetIssuer = "asset_issuer"
-        case sendAssetType = "send_asset_type"
-        case sendAssetCode = "send_asset_code"
-        case sendAssetIssuer = "send_asset_issuer"
+        case sendAssetType = "source_asset_type"
+        case sendAssetCode = "source_asset_code"
+        case sendAssetIssuer = "source_asset_issuer"
 
     }
     

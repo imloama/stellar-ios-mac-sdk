@@ -50,6 +50,7 @@ public class PaymentsService: NSObject {
     ///
     open func getPayments(forAccount accountId:String, from cursor:String? = nil, order:Order? = nil, limit:Int? = nil, response:@escaping PageResponse<OperationResponse>.ResponseClosure) {
         let path = "/accounts/" + accountId + "/payments"
+        print("\(path)")
         getPayments(onPath: path, from:cursor, order:order, limit:limit, response:response)
     }
     
@@ -79,7 +80,7 @@ public class PaymentsService: NSObject {
         getPayments(onPath: path, from:cursor, order:order, limit:limit, response:response)
     }
     
-    private func getPayments(onPath path:String, from cursor:String? = nil, order:Order? = nil, limit:Int? = nil, response:@escaping PageResponse<OperationResponse>.ResponseClosure) {
+    private func getPayments(onPath path:String, from cursor:String? = nil, order:Order? = .descending, limit:Int? = nil, response:@escaping PageResponse<OperationResponse>.ResponseClosure) {
         var requestPath = path
         
         var params = Dictionary<String,String>()
@@ -104,6 +105,8 @@ public class PaymentsService: NSObject {
             switch result {
             case .success(let data):
                 do {
+                    let d = try! JSONSerialization.jsonObject(with: data, options: .mutableContainers)
+                    print("\(d)")
                     let operations = try self.operationsFactory.operationsFromResponseData(data: data)
                     response(.success(details: operations))
                 } catch {

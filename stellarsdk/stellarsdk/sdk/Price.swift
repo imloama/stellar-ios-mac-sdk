@@ -65,7 +65,17 @@ public class Price {
     ///
     /// - Returns the generated PriceXDR object.
     public func toXdr() -> PriceXDR {
-        return PriceXDR(n: Int32(n), d: Int32(d))
+        let xdrN = Int32(exactly: n)
+        let xdrD = Int32(exactly: d)
+        var xdrn1: Int32 = 0
+        var xdrd1: Int32 = 0
+        if xdrN != nil {
+            xdrn1 = xdrN!
+        }
+        if xdrD != nil {
+            xdrd1 = xdrD!
+        }
+        return PriceXDR(n: xdrn1, d: xdrd1)
     }
 }
 

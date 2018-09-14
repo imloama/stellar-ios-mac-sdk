@@ -69,9 +69,6 @@ class EffectsFactory: NSObject {
             case .accountFlagsUpdated:
                 let effect = try jsonDecoder.decode(AccountFlagsUpdatedEffectResponse.self, from: data)
                 return effect
-            case .accountInflationDestinationUpdated:
-                let effect = try jsonDecoder.decode(AccountInflationDestinationUpdatedEffectResponse.self, from: data)
-                return effect
             case .signerCreated:
                 let effect = try jsonDecoder.decode(SignerCreatedEffectResponse.self, from: data)
                 return effect
