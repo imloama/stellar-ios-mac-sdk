@@ -24,7 +24,7 @@ class OperationXDRTestCase: XCTestCase {
     
     func testSubmitTransactionResultXdr() {
         let expectation = XCTestExpectation(description: "Get transaction details")
-        let xdrEnvelope = "AAAAALhxbBeA2gZSLD1MxZTLgRZIBEThkfQ5RAWAoN8fle9gAAAAZAByE3sAAAAIAAAAAAAAAAAAAAABAAAAAQAAAAC4cWwXgNoGUiw9TMWUy4EWSARE4ZH0OUQFgKDfH5XvYAAAAAkAAAAAAAAAAR+V72AAAABAAuiJ2+1FGpG7D+sS9qqZlk2/dsu8mdECuR1jiX9PaawJaJMETUP6u06cZgzrqopzmypJMOS/ob7BRvCQ3JkwDg=="
+        let xdrEnvelope = "AAAAAPhHVuyAhuUidEpB/4KaPpihfXTs6ZiFKOFfxHZbuOTXAAAAZAACBCMAAAABAAAAAAAAAAAAAAABAAAAAAAAAAkAAAAAAAAAAVu45NcAAABABGxmb9h3ok4+t9CTncpoCK1SJ8uucuDWPlDpkfSKlumXMjbTeg3w+dp/3A2uUcBiNH5cPrOzy7IlRpMsKVY9Bw=="
         
         sdk.transactions.postTransaction(transactionEnvelope: xdrEnvelope, response: { (response) -> (Void) in
             switch response {
@@ -550,7 +550,7 @@ class OperationXDRTestCase: XCTestCase {
             // GC5SIC4E3V56VOHJ3OZAX5SJDTWY52JYI2AFK6PUGSXFVRJQYQXXZBZF
             let operationSource = try KeyPair(secretSeed: "SC4CGETADVYTCR5HEAVZRB3DZQY5Y4J7RFNJTRA6ESMHIPEZUSTE2QDK")
             
-            let signer = try Signer.preAuthTx(transaction: transaction)
+            let signer = try Signer.preAuthTx(transaction: transaction, network: .testnet)
             
             let operation = try SetOptionsOperation(sourceAccount: operationSource, signer: signer, signerWeight:10)
             let operationXdr = try operation.toXDR()
