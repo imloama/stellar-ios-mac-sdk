@@ -19,7 +19,7 @@ To integrate stellar SDK into your Xcode project using CocoaPods, specify it in 
 use_frameworks!
 
 target '<Your Target Name>' do
-    pod 'stellar-ios-mac-sdk', '~> 1.4.0'
+    pod 'stellar-ios-mac-sdk', '~> 1.5.6'
 end
 ```
 
@@ -306,6 +306,32 @@ try sdk.transactions.submitTransaction(transaction: transaction) { (response) ->
 }
 ```
 
+Get a transaction envelope from an XDR string:
+
+```swift
+let xdrString = "AAAAAJ/Ax+axve53/7sXfQY0fI6jzBeHEcPl0Vsg1C2tqyRbAAAAZAAAAAAAAAAAAAAAAQAAAABb2L/OAAAAAFvYwPoAAAAAAAAAAQAAAAEAAAAAo7FW8r8Nj+SMwPPeAoL4aUkLob7QU68+9Y8CAia5k78AAAAKAAAAN0NJcDhiSHdnU2hUR042ZDE3bjg1ZlFGRVBKdmNtNFhnSWhVVFBuUUF4cUtORVd4V3JYIGF1dGgAAAAAAQAAAEDh/7kQjZbcXypISjto5NtGLuaDGrfL/F08apZQYp38JNMNQ9p/e1Fy0z23WOg/Ic+e91+hgbdTude6+1+i0V41AAAAAAAAAAGtqyRbAAAAQNeY1rEwPynWnVXaaE/XWeuRnOHS/479J+Eu7s5OplSlF41xB7E8u9WzEItaOs167xuOVcLZUKBCBF1fnfzMEQg="
+do {
+    let envelope = try TransactionEnvelopeXDR(xdr:xdrString)
+    let envelopeString = envelope.xdrEncoded
+} catch {
+    print("Invalid xdr string")
+}
+```
+
+Get a transaction object from an XDR string:
+
+```swift
+let xdrString = "AAAAAJ/Ax+axve53/7sXfQY0fI6jzBeHEcPl0Vsg1C2tqyRbAAAAZAAAAAAAAAAAAAAAAQAAAABb2L/OAAAAAFvYwPoAAAAAAAAAAQAAAAEAAAAAo7FW8r8Nj+SMwPPeAoL4aUkLob7QU68+9Y8CAia5k78AAAAKAAAAN0NJcDhiSHdnU2hUR042ZDE3bjg1ZlFGRVBKdmNtNFhnSWhVVFBuUUF4cUtORVd4V3JYIGF1dGgAAAAAAQAAAEDh/7kQjZbcXypISjto5NtGLuaDGrfL/F08apZQYp38JNMNQ9p/e1Fy0z23WOg/Ic+e91+hgbdTude6+1+i0V41AAAAAA=="
+do {
+    // Get the transaction object
+    let transaction = try Transaction(xdr:xdrString)
+    // Convert your transaction back to xdr
+    let transactionString = transaction.xdrEncoded
+} catch {
+    print("Invalid xdr string")
+}
+```
+
 ### 5. Using a federation server
 
 The Stellar federation protocol defined in [SEP-002](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0002.md) maps Stellar addresses to more information about a given user. It’s a way for Stellar client software to resolve email-like addresses such as:
@@ -483,7 +509,8 @@ sdk.accounts.getAccountDetails(accountId: "GAK7I2E6PVBFF27NU5MRY6UXGDWAJT4PF2AH4
         let uriSchemeBuilder = URIScheme()
         
         // get the URI with your transactionXDR
-        let uriScheme = uriSchemeBuilder.getSignTransactionURI(transactionXDR: transaction.transactionXDR)
+	// more params can be added to the url, check method definition
+        let uriScheme = uriSchemeBuilder.getSignTransactionURI(transactionXDR: transaction.transactionXDR, callBack: "your_callback_api.com")
         
     case .failure(let error):
         //
@@ -497,12 +524,13 @@ Generate a URI that will serve as a request to pay a specific address with a spe
 
 ```swift
 let uriSchemeBuilder = URIScheme()
-let uriScheme = uriSchemeBuilder.getPayOperationURI(accountID: "GAK7I2E6PVBFF27NU5MRY6UXGDWAJT4PF2AH46NUWLFJFFVLOZIEIO4Q", amount: 100, assetCode: "BTC")
+// more params can be added to the url, check method definition
+let uriScheme = uriSchemeBuilder.getPayOperationURI(accountID: "GAK7I2E6PVBFF27NU5MRY6UXGDWAJT4PF2AH46NUWLFJFFVLOZIEIO4Q", amount: 100, assetCode: "BTC", callBack: "your_callback_api.com")
 ```
 
-#### 7.3 Sign a transaction from a giver URI
+#### 7.3 Sign a transaction from a given URI and send it to the network
 
-Signs a transaction from a URI and sends it to the stellar network.
+Signs a transaction from a URI and sends it to the callback url if present or to the stellar network otherwise.
 
 ```swift
 uriBuilder.signTransaction(forURL: uri, signerKeyPair: keyPair, transactionConfirmation: { (transaction) -> (Bool) in
@@ -517,21 +545,49 @@ uriBuilder.signTransaction(forURL: uri, signerKeyPair: keyPair, transactionConfi
 }
 ```
 
+### 8. Stellar Web Authentication
+
+This SEP defines the standard way for clients such as wallets or exchanges to create authenticated web sessions on behalf of a user who holds a Stellar account. A wallet may want to authenticate with any web service which requires a Stellar account ownership verification, for example, to upload KYC information to an anchor in an authenticated way as described in SEP-6.
+
+#### 8.1 Get a JWT token.
+
+Authenticate with a server and get a JWT token.
+
+```swift
+// Hold a strong reference to this to avoid being deallocated
+let webAuthenticator = WebAuthenticator(authEndpoint: "http://your_api.stellar.org/auth", network: .testnet, serverSigningKey: "GBWMCCC3NHSKLAOJDBKKYW7SSH2PFTTNVFKWSGLWGDLEBKLOVP5JLBBP")
+    if let keyPair = try? KeyPair(secretSeed: "SBAYNYLQFXVLVAHW4BXDQYNJLMDQMZ5NQDDOHVJD3PTBAUIJRNRK5LGX") {
+        webAuthenticator.jwtToken(forKeyPair: keyPair) { (response) -> (Void) in
+            switch response {
+            case .success(let jwtToken):
+                // use the token to do your calls
+            case .failure(let error):
+                // handle the error
+            }
+        }
+    }
+}
+```
+
 ## Documentation and Examples
 
 You can find more documentation and examples in the [docs](https://github.com/Soneso/stellar-ios-mac-sdk/tree/master/docs) folder.
 
-## Sample IOS app
+## Samples
 
-Satraj from BlockEQ created an [open source iOS wallet](https://github.com/Block-Equity/stellar-ios-wallet) for Stellar, that uses our sdk. Thank you Satraj for your contribution to this project! 
+The [Lumenshine](https://lumenshine.com) wallet for iOS is an [open source project](https://github.com/Soneso/lumenshine-iOS-wallet) developed and maintained by [Soneso](https://soneso.com), the creators and maintainers of this SDK. Lumenshine is currently available for [iOS](https://itunes.apple.com/us/app/lumenshine/id1441524975) and for [web](https://lumenshine.com).
+
+Another open source project that uses our SDK is the [BlockEQ iOS wallet](https://github.com/Block-Equity/stellar-ios-wallet) for Stellar.
 
 ## Stellar Ecosystem Proposals (SEPs) implemented
 
+- [SEP-001](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0001.md) - Stellar Toml
 - [SEP-002](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0002.md) - Federation protocol
 - [SEP-005](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0005.md) - Key Derivation Methods for Stellar Accounts
 - [SEP-006](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0006.md) - Anchor/Client interoperability
 - [SEP-007](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0007.md) - URI Scheme to facilitate delegated signing
-
+- [SEP-0010](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0010.md) - Stellar Web Authentication
+- [SEP-0012](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0012.md) - Anchor/Client customer info transfer
 
 ## How to contribute
 

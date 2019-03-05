@@ -37,26 +37,47 @@ public class Federation: NSObject {
         self.serviceHelper = ServiceHelper(baseURL: federationAddress)
     }
     
-    /// Creates a Federation instance based on information from [stellar.toml](https://www.stellar.org/developers/learn/concepts/stellar-toml.html) file for a given domain.
-    public static func forDomain(domain:String, completion:@escaping FederationClosure) {
-        let federationAddressKey = "FEDERATION_SERVER"
-        
-        guard let url = URL(string: "\(domain)/.well-known/stellar.toml") else {
-            completion(.failure(error: .invalidDomain))
+    /// Resolves a given stellar address
+    public static func resolve(stellarAddress:String, secure:Bool = true, completion:@escaping ResolveClosure) {
+        let components = stellarAddress.components(separatedBy: "*")
+        guard components.count == 2 else {
+            completion(.failure(error: .invalidAddress))
             return
         }
-        
+        let domain = components[1]
+        Federation.forDomain(domain:domain, secure:secure) { (response) -> (Void) in
+            switch response {
+            case .success(let federation):
+                federation.resolve(address: stellarAddress, completion: completion)
+            case .failure(let error):
+                completion(.failure(error: error))
+            }
+        }
+    }
+    
+    /// Creates a Federation instance based on information from [stellar.toml](https://www.stellar.org/developers/learn/concepts/stellar-toml.html) file for a given domain.
+    public static func forDomain(domain:String, secure:Bool = true, completion:@escaping FederationClosure) {
+    
         DispatchQueue.global().async {
             do {
-                let tomlString = try String(contentsOf: url, encoding: .utf8)
-                let toml = try Toml(withString: tomlString)
-                if let federationAddress = toml.string(federationAddressKey) {
-                    let federation = Federation(federationAddress: federationAddress)
-                    completion(.success(response: federation))
-                } else {
-                    completion(.failure(error: .noFederationSet))
+                try StellarToml.from(domain: domain, secure: secure) { (result) -> (Void) in
+                    switch result {
+                    case .success(response: let stellarToml):
+                        if let federationServer = stellarToml.accountInformation.federationServer {
+                            let federation = Federation(federationAddress: federationServer)
+                            completion(.success(response: federation))
+                        } else {
+                            completion(.failure(error: .noFederationSet))
+                        }
+                    case .failure(error: let stellarTomlError):
+                        switch stellarTomlError {
+                        case .invalidDomain:
+                            completion(.failure(error: .invalidTomlDomain))
+                        case .invalidToml:
+                            completion(.failure(error: .invalidToml))
+                        }
+                    }
                 }
-                
             } catch {
                 completion(.failure(error: .invalidToml))
             }
@@ -70,7 +91,7 @@ public class Federation: NSObject {
             return
         }
         
-        let requestPath = "/federation?q=\(address)&type=name"
+        let requestPath = "?q=\(address)&type=name"
         
         serviceHelper.GETRequestWithPath(path: requestPath) { (result) -> (Void) in
             switch result {
@@ -97,7 +118,7 @@ public class Federation: NSObject {
             return
         }
         
-        let requestPath = "/federation?q=\(account_id)&type=id"
+        let requestPath = "?q=\(account_id)&type=id"
         
         serviceHelper.GETRequestWithPath(path: requestPath) { (result) -> (Void) in
             switch result {
@@ -117,7 +138,7 @@ public class Federation: NSObject {
     
     /// Resolves the given transaction id to federation address if the user was found for a given Stellar address.
     public func resolve(transaction_id: String, completion:@escaping ResolveClosure) {
-        let requestPath = "/federation?q=\(transaction_id)&type=txid"
+        let requestPath = "?q=\(transaction_id)&type=txid"
         
         serviceHelper.GETRequestWithPath(path: requestPath) { (result) -> (Void) in
             switch result {

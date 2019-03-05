@@ -71,10 +71,10 @@ class MemoRemoteTestCase: XCTestCase {
         let expectation = XCTestExpectation(description: "Memo with payment transaction sent and received")
         
         do {
-            let sourceAccountKeyPair = try KeyPair(secretSeed:"SA3QF6XW433CBDLUEY5ZAMHYJLJNH4GOPASLJLO4QKH75HRRXZ3UM2YJ")
-            let destinationAccountKeyPair = try KeyPair(accountId: "GCKECJ5DYFZUX6DMTNJFHO2M4QKTUO5OS5JZ4EIIS7C3VTLIGXNGRTRC")
+            let sourceAccountKeyPair = try KeyPair(secretSeed:"SDBLUM623VOIEQWXD5FN6K7HOU5GUKUGD6SGWTW2BB3PPD5GVFG7RZU5")
+            let destinationAccountKeyPair = try KeyPair(accountId: "GBMDWGIFG6M3K5Y5UNF4OLASG2MXTQ6KFZ6J2HNR3LMZVSUUJFVUUSQT")
             
-            sdk.transactions.stream(for: .transactionsForAccount(account: destinationAccountKeyPair.accountId, cursor: "now")).onReceive { (response) -> (Void) in
+            sdk.transactions.stream(for: .transactionsForAccount(account: sourceAccountKeyPair.accountId, cursor: "now")).onReceive { (response) -> (Void) in
                 switch response {
                 case .open:
                     break
@@ -131,6 +131,16 @@ class MemoRemoteTestCase: XCTestCase {
             expectation.fulfill()
         }
         
-        wait(for: [expectation], timeout: 15.0)
+        wait(for: [expectation], timeout: 30.0)
+    }
+
+    func testMaxLengthMemoText() {
+        let failingTestString = "https://gift-fakeurlspam.info"
+        let passingTestString1 = "https://gift-fakeurlspam.org"
+        let passingTestString2 = "https://gift-fakeurlspam.cc"
+
+        XCTAssertNoThrow(try Memo(text: passingTestString1))
+        XCTAssertNoThrow(try Memo(text: passingTestString2))
+        XCTAssertThrowsError(try Memo(text: failingTestString))
     }
 }

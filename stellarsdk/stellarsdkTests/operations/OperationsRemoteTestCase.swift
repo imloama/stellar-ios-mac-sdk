@@ -69,7 +69,7 @@ class OperationsRemoteTestCase: XCTestCase {
     func testGetOperationsForAccount() {
         let expectation = XCTestExpectation(description: "Get operations for account")
         
-        sdk.operations.getOperations(forAccount: "GD4FLXKATOO2Z4DME5BHLJDYF6UHUJS624CGA2FWTEVGUM4UZMXC7GVX") { (response) -> (Void) in
+        sdk.operations.getOperations(forAccount: "GBMDWGIFG6M3K5Y5UNF4OLASG2MXTQ6KFZ6J2HNR3LMZVSUUJFVUUSQT", from: nil, order: Order.descending) { (response) -> (Void) in
             switch response {
             case .success(_):
                 XCTAssert(true)
@@ -123,7 +123,7 @@ class OperationsRemoteTestCase: XCTestCase {
     func testGetOperationDetails() {
         let expectation = XCTestExpectation(description: "Get operation details")
         
-        sdk.operations.getOperationDetails(operationId: "10157597659137") { (response) -> (Void) in
+        sdk.operations.getOperationDetails(operationId: "760209215489") { (response) -> (Void) in
             switch response {
             case .success(_):
                 XCTAssert(true)
@@ -142,7 +142,7 @@ class OperationsRemoteTestCase: XCTestCase {
         let expectation = XCTestExpectation(description: "Create and fund a new account")
         do {
             
-            let sourceAccountKeyPair = try KeyPair(secretSeed:"SDXEJKRXYLTV344KWCRJ4PAGAJVXKGK3UGESRWBWLDEWYO4S5OQ6VQ6I")
+            let sourceAccountKeyPair = try KeyPair(secretSeed:"SDBLUM623VOIEQWXD5FN6K7HOU5GUKUGD6SGWTW2BB3PPD5GVFG7RZU5")
             //let sourceAccountKeyPair = try KeyPair(secretSeed:"SA3QF6XW433CBDLUEY5ZAMHYJLJNH4GOPASLJLO4QKH75HRRXZ3UM2YJ")
             let destinationKeyPair = try KeyPair.generateRandomKeyPair()
             print ("CA Test: Source account id: \(sourceAccountKeyPair.accountId)")
@@ -232,7 +232,7 @@ class OperationsRemoteTestCase: XCTestCase {
     func testUpdateHomeDomain() {
         let expectation = XCTestExpectation(description: "Set www.soneso.com as home domain")
         do {
-            let sourceAccountKeyPair = try KeyPair(secretSeed:"SDXEJKRXYLTV344KWCRJ4PAGAJVXKGK3UGESRWBWLDEWYO4S5OQ6VQ6I")
+            let sourceAccountKeyPair = try KeyPair(secretSeed:"SDZ2TGEQ6IZETYLNVO4MOSOFRUVWY6D63EWIRTCT2S777TK3Z3R5JIFE")
             print ("Account ID: \(sourceAccountKeyPair.accountId)")
             
             let homeDomain = "http://www.soneso.com"
@@ -314,9 +314,9 @@ class OperationsRemoteTestCase: XCTestCase {
     func testUpdateInflationDestination() {
         let expectation = XCTestExpectation(description: "Set inflation destination")
         do {
-            let sourceAccountKeyPair = try KeyPair(secretSeed:"SDXEJKRXYLTV344KWCRJ4PAGAJVXKGK3UGESRWBWLDEWYO4S5OQ6VQ6I")
+            let sourceAccountKeyPair = try KeyPair(secretSeed:"SDBLUM623VOIEQWXD5FN6K7HOU5GUKUGD6SGWTW2BB3PPD5GVFG7RZU5")
             print ("UID Test source account id: \(sourceAccountKeyPair.accountId)")
-            let destinationAccountId = "GD53MSTOROVW4YQ2CWNJXYIK44ILXKDN4CYPKQVAF3EXVDT7Q6HASX5T"
+            let destinationAccountId = "GBMDWGIFG6M3K5Y5UNF4OLASG2MXTQ6KFZ6J2HNR3LMZVSUUJFVUUSQT"
             
             sdk.operations.stream(for: .operationsForAccount(account: sourceAccountKeyPair.accountId, cursor: "now")).onReceive { (response) -> (Void) in
                 switch response {
@@ -386,9 +386,9 @@ class OperationsRemoteTestCase: XCTestCase {
         let expectation = XCTestExpectation(description: "Change trustline, allow destination account to receive IOM - our sdk token")
         do {
             
-            let issuingAccountKeyPair = try KeyPair(accountId: "GCXIZK3YMSKES64ATQWMQN5CX73EWHRHUSEZXIMHP5GYHXL5LNGCOGXU")
+            let issuingAccountKeyPair = try KeyPair(accountId: "GCVLKGCW2X26NMNAM7PDCTS2VO5MMOQPHSG6KWYEM7MHGDMLHORCNLZC")
             let IOM = Asset(type: AssetType.ASSET_TYPE_CREDIT_ALPHANUM4, code: "IOM", issuer: issuingAccountKeyPair)
-            let trustingAccountKeyPair = try KeyPair(secretSeed: "SA3QF6XW433CBDLUEY5ZAMHYJLJNH4GOPASLJLO4QKH75HRRXZ3UM2YJ")
+            let trustingAccountKeyPair = try KeyPair(secretSeed: "SDFP7WG4ROP66JTN7CHHKTIEHIPG27WZ5G3Y5HR74GPMCHVZUVXBDLLR")
             
             printAccountDetails(tag: "CTL Test - trusting account", accountId: trustingAccountKeyPair.accountId)
             
@@ -458,10 +458,10 @@ class OperationsRemoteTestCase: XCTestCase {
     func testManageOffer() {
         let expectation = XCTestExpectation(description: "Create an offer for IOM, the sdk token.")
         do {
-            let sourceAccountKeyPair = try KeyPair(secretSeed:"SA3QF6XW433CBDLUEY5ZAMHYJLJNH4GOPASLJLO4QKH75HRRXZ3UM2YJ")
+            let sourceAccountKeyPair = try KeyPair(secretSeed:"SALRLAO6L23EIBZD526CLQKZJWSNP3OOG2KDQ3BUN2K6PLMQKR5WIN5J")
             print ("MOF Test source accountId: \(sourceAccountKeyPair.accountId)")
             
-            let issuingAccountKeyPair = try KeyPair(accountId: "GCXIZK3YMSKES64ATQWMQN5CX73EWHRHUSEZXIMHP5GYHXL5LNGCOGXU")
+            let issuingAccountKeyPair = try KeyPair(secretSeed: "SDNCAM5TADVOA2CFWZ2LCWSHYPXLTGTC545KZWEQJW6WUUMUY33ZISSW")
             let IOM = Asset(type: AssetType.ASSET_TYPE_CREDIT_ALPHANUM4, code: "IOM", issuer: issuingAccountKeyPair)
             let XLM = Asset(type: AssetType.ASSET_TYPE_NATIVE)
         
@@ -494,13 +494,14 @@ class OperationsRemoteTestCase: XCTestCase {
                 }
             }*/
             
+            
             sdk.operations.stream(for: .operationsForAccount(account: sourceAccountKeyPair.accountId, cursor: "now")).onReceive { (response) -> (Void) in
                 switch response {
                 case .open:
                     break
                 case .response( _, let operationResponse):
                     if let manageOfferResponse = operationResponse as? ManageOfferOperationResponse {
-                        if manageOfferResponse.buyingAssetType == AssetTypeAsString.NATIVE, manageOfferResponse.offerId == 113064 {
+                        if manageOfferResponse.buyingAssetType == AssetTypeAsString.NATIVE, manageOfferResponse.offerId == 0 {
                             XCTAssert(true)
                             expectation.fulfill()
                         }
@@ -520,7 +521,7 @@ class OperationsRemoteTestCase: XCTestCase {
                 case .success(let accountResponse):
                     do {
                         let random = arc4random_uniform(21) + 10;
-                        let manageOfferOperation = ManageOfferOperation(selling:IOM!, buying:XLM!, amount:Decimal(random), price:Price(numerator:5, denominator:15), offerId:113064)
+                        let manageOfferOperation = ManageOfferOperation(selling:IOM!, buying:XLM!, amount:Decimal(random), price:Price(numerator:5, denominator:15), offerId:0)
                         
                         let transaction = try Transaction(sourceAccount: accountResponse,
                                                           operations: [manageOfferOperation],
@@ -554,18 +555,22 @@ class OperationsRemoteTestCase: XCTestCase {
             expectation.fulfill()
         }
         
-        wait(for: [expectation], timeout: 15.0)
+        wait(for: [expectation], timeout: 30.0)
     }
     
     func testCreatePassiveOffer() {
         let expectation = XCTestExpectation(description: "Create a passive offer for IOM, the sdk token.")
         do {
-            let sourceAccountKeyPair = try KeyPair(secretSeed:"SA3QF6XW433CBDLUEY5ZAMHYJLJNH4GOPASLJLO4QKH75HRRXZ3UM2YJ")
+            let sourceAccountKeyPair = try KeyPair(secretSeed:"SALRLAO6L23EIBZD526CLQKZJWSNP3OOG2KDQ3BUN2K6PLMQKR5WIN5J")
             print ("CPO Test source accountId: \(sourceAccountKeyPair.accountId)")
             
-            let issuingAccountKeyPair = try KeyPair(accountId: "GCXIZK3YMSKES64ATQWMQN5CX73EWHRHUSEZXIMHP5GYHXL5LNGCOGXU")
+            let issuingAccountKeyPair = try KeyPair(secretSeed: "SDNCAM5TADVOA2CFWZ2LCWSHYPXLTGTC545KZWEQJW6WUUMUY33ZISSW")
             let IOM = Asset(type: AssetType.ASSET_TYPE_CREDIT_ALPHANUM4, code: "IOM", issuer: issuingAccountKeyPair)
             let XLM = Asset(type: AssetType.ASSET_TYPE_NATIVE)
+            
+            sdk.transactions.stream(for: .transactionsForAccount(account: sourceAccountKeyPair.accountId, cursor: "now")).onReceive { (response) in
+                
+            }
             
             sdk.operations.stream(for: .operationsForAccount(account: sourceAccountKeyPair.accountId, cursor: "now")).onReceive { (response) -> (Void) in
                 switch response {
@@ -634,7 +639,7 @@ class OperationsRemoteTestCase: XCTestCase {
     func testManageAccountData() {
         let expectation = XCTestExpectation(description: "Add a key value pair to an account")
         do {
-            let sourceAccountKeyPair = try KeyPair(secretSeed:"SDXEJKRXYLTV344KWCRJ4PAGAJVXKGK3UGESRWBWLDEWYO4S5OQ6VQ6I")
+            let sourceAccountKeyPair = try KeyPair(secretSeed:"SDBLUM623VOIEQWXD5FN6K7HOU5GUKUGD6SGWTW2BB3PPD5GVFG7RZU5")
             print ("MAD Test: source accoint Id \(sourceAccountKeyPair.accountId)")
             
             let name = "soneso"
@@ -742,7 +747,7 @@ class OperationsRemoteTestCase: XCTestCase {
     func testOperationsForAccountStream() {
         let expectation = XCTestExpectation(description: "Get response from stream")
         
-        sdk.operations.stream(for: .operationsForAccount(account: "GD4FLXKATOO2Z4DME5BHLJDYF6UHUJS624CGA2FWTEVGUM4UZMXC7GVX", cursor: nil)).onReceive { (response) -> (Void) in
+        sdk.operations.stream(for: .operationsForAccount(account: "GDQZ4N3CMM3FL2HLYKZPF3JPZX3IRHI3SQKNSTEG6GMEA3OAW337EBA6", cursor: nil)).onReceive { (response) -> (Void) in
             switch response {
             case .open:
                 break

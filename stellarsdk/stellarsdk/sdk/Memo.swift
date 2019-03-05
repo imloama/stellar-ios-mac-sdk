@@ -45,7 +45,7 @@ extension Memo: MemoProtocol {
     /// - Throws an StellarSDKError.invalidArgument error if the given string is larger than 28 bytes.
     ///
     public init?(text:String) throws {
-        if text.utf8CString.count > 28 {
+        if text.count > 28 {
             throw StellarSDKError.invalidArgument(message: "text must be <= 28 bytes. length=\(text.count)" )
         }
         self = .text(text)
@@ -75,6 +75,24 @@ extension Memo: MemoProtocol {
             throw StellarSDKError.invalidArgument(message: "MEMO_RETURN_HASH can contain 32 bytes at max.")
         }
         self = .returnHash(returnHash)
+    }
+    
+    /// Creates a memo from a MemoXDR instance
+    ///
+    /// - Parameter memoXDR: The MemoXDR instance.
+    public init?(memoXDR:MemoXDR) {
+        switch memoXDR {
+        case .none:
+            self = .none
+        case .text(let text):
+            self = .text(text)
+        case .id(let id):
+            self = .id(id)
+        case .hash(let hash):
+            self = .hash(hash.wrapped)
+        case .returnHash(let hash):
+            self = .returnHash(hash.wrapped)
+        }
     }
     
     public func type() -> String {

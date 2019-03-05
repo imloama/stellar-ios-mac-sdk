@@ -180,19 +180,20 @@ public class URIScheme: NSObject {
     /// - Throws:
     ///     - A 'HorizonRequestError' error depending on the error case.
     ///
-    public func signTransaction(forURL url: String, signerKeyPair keyPair: KeyPair, transactionConfirmation: TransactionConfirmationClosure? = nil, completion: @escaping SubmitTransactionClosure) {
+    public func signTransaction(forURL url: String, signerKeyPair keyPair: KeyPair, network: Network = .public, transactionConfirmation: TransactionConfirmationClosure? = nil, completion: @escaping SubmitTransactionClosure) {
         if let transactionXDR = getTransactionXDR(fromURL: url) {
             if let isConfirmed = transactionConfirmation?(transactionXDR), !isConfirmed {
                 completion(.failure(error: HorizonRequestError.requestFailed(message: "Transaction was not confirmed!")))
                 return
             }
             
-            setupTransactionXDR(transactionXDR: transactionXDR, signerKeyPair: keyPair, publicKey: getPublicKeyFieldValue(fromURL: url)) { (response) -> (Void) in
+            setupTransactionXDR(transactionXDR: transactionXDR, signerKeyPair: keyPair, publicKey: getValue(forParam: SignTransactionParams.pubkey, fromURL: url)) { (response) -> (Void) in
                 switch response {
                 case .success(transactionXDR: var transaction):
                     if transaction?.sourceAccount.accountId == keyPair.accountId {
                         try? transaction?.sign(keyPair: keyPair, network: .testnet)
-                        self.submitTransaction(transactionXDR: transaction, keyPair: keyPair, completion: { (response) -> (Void) in
+                        let callback = self.getValue(forParam: .callback, fromURL: url)
+                        self.submitTransaction(transactionXDR: transaction, callback: callback, keyPair: keyPair, completion: { (response) -> (Void) in
                             completion(response)
                         })
                     } else {
@@ -208,28 +209,43 @@ public class URIScheme: NSObject {
     }
     
     /// Sends the transaction to the network.
-    private func submitTransaction(transactionXDR: TransactionXDR?, keyPair: KeyPair, completion: @escaping SubmitTransactionClosure) {
+    private func submitTransaction(transactionXDR: TransactionXDR?, callback: String? = nil, keyPair: KeyPair, completion: @escaping SubmitTransactionClosure) {
         if let transactionEncodedEnvelope = try? transactionXDR?.encodedEnvelope(), let transactionEnvelope = transactionEncodedEnvelope {
-            self.sdk.transactions.postTransaction(transactionEnvelope: transactionEnvelope, response: { (response) -> (Void) in
-                switch response {
-                case .success(_):
-                    completion(.success)
-                case .failure(let error):
-                    completion(.failure(error: error))
+            if var callback = callback, callback.hasPrefix("uri:") {
+                callback = String(callback.dropLast(4))
+                let serviceHelper = ServiceHelper(baseURL: callback)
+                let data = try? JSONSerialization.data(withJSONObject: ["xdr":transactionEncodedEnvelope], options: .prettyPrinted)
+                serviceHelper.POSTRequestWithPath(path: "", body: data) { (response) -> (Void) in
+                    let _ = serviceHelper
+                    switch response {
+                    case .success(_):
+                        completion(.success)
+                    case .failure(let error):
+                        completion(.failure(error: error))
+                    }
                 }
-            })
+            } else {
+                self.sdk.transactions.postTransaction(transactionEnvelope: transactionEnvelope, response: { (response) -> (Void) in
+                    switch response {
+                    case .success(_):
+                        completion(.success)
+                    case .failure(let error):
+                        completion(.failure(error: error))
+                    }
+                })
+            }
         } else {
             completion(.failure(error: HorizonRequestError.requestFailed(message: "encodedEnvelop failed!")))
         }
     }
     
-    /// Sets the source account for the transaction.
-    private func setTransactionXDRSourceAccount(transactionXDR: TransactionXDR, signerKeyPair: KeyPair, completion: @escaping SetupTransactionXDRClosure) {
+    /// Sets the sequence number for the transaction.
+    private func setTransactionXDRSequenceNr(transactionXDR: TransactionXDR, signerKeyPair: KeyPair, completion: @escaping SetupTransactionXDRClosure) {
         sdk.accounts.getAccountDetails(accountId: transactionXDR.sourceAccount.accountId) { (response) -> (Void) in
             switch response {
             case .success(details: let accountDetails):
                 let reconfiguredTransactionXDR = TransactionXDR(sourceAccount: transactionXDR.sourceAccount,
-                                                            seqNum: accountDetails.sequenceNumber,
+                                                            seqNum: accountDetails.incrementedSequenceNumber(),
                                                             timeBounds: transactionXDR.timeBounds,
                                                             memo: transactionXDR.memo,
                                                             operations: transactionXDR.operations)
@@ -246,7 +262,7 @@ public class URIScheme: NSObject {
             switch response {
             case .success(details: let accountDetails):
                 let reconfiguredTransactionXDR = TransactionXDR(sourceAccount: accountDetails.keyPair.publicKey,
-                                                            seqNum: accountDetails.sequenceNumber,
+                                                            seqNum: accountDetails.incrementedSequenceNumber(),
                                                             timeBounds: transactionXDR.timeBounds,
                                                             memo: transactionXDR.memo,
                                                             operations: transactionXDR.operations)
@@ -273,7 +289,7 @@ public class URIScheme: NSObject {
             }
             
         } else if !sourceAccountIsEmpty && sequenceNumberIsEmpty {
-            setTransactionXDRSourceAccount(transactionXDR: transactionXDR, signerKeyPair: signerKeyPair) { (response) -> (Void) in
+            setTransactionXDRSequenceNr(transactionXDR: transactionXDR, signerKeyPair: signerKeyPair) { (response) -> (Void) in
                 switch response {
                 case .success(transactionXDR: let transaction):
                     completion(.success(transactionXDR: transaction))
@@ -287,11 +303,11 @@ public class URIScheme: NSObject {
     }
     
     /// Gets the public key field value from the url.
-    private func getPublicKeyFieldValue(fromURL url: String) -> String? {
+    private func getValue(forParam param: SignTransactionParams, fromURL url: String) -> String? {
         let fields = url.split(separator: "&")
         for field in fields {
-            if field.hasPrefix("\(SignTransactionParams.pubkey)") {
-                return field.replacingOccurrences(of: "&\(SignTransactionParams.pubkey)=", with: "")
+            if field.hasPrefix("\(param)") {
+                return field.replacingOccurrences(of: "\(param)=", with: "")
             }
         }
         

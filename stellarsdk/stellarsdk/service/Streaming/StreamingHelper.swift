@@ -12,6 +12,8 @@ public class StreamingHelper: NSObject {
     var eventSource: EventSource!
     var baseURL: String
     
+    private var closed = false
+    
     init(baseURL:String) {
         self.baseURL = baseURL
     }
@@ -19,23 +21,33 @@ public class StreamingHelper: NSObject {
     func streamFrom(path:String, responseClosure:@escaping StreamResponseEnum<String>.ResponseClosure) {
         let streamingURL = baseURL + path
         eventSource = EventSource(url: streamingURL, headers: ["Accept" : "text/event-stream"])
-        eventSource.onOpen {
-            responseClosure(.open)
+        eventSource.onOpen { [weak self] httpResponse in
+            if httpResponse?.statusCode == 404 {
+                let error = HorizonRequestError.notFound(message: "Horizon object missing", horizonErrorResponse: nil)
+                responseClosure(.error(error: error))
+            } else if let self = self, !self.closed {
+                responseClosure(.open)
+            }
         }
         
-        eventSource.onError { (error) in
-            responseClosure(.error(error: error))
+        eventSource.onError { [weak self] error in
+            if let self = self, !self.closed {
+                responseClosure(.error(error: error))
+            }
         }
         
-        eventSource.onMessage { (id, event, data) in
-            responseClosure(.response(id: id ?? "", data: data ?? ""))
+        eventSource.onMessage { [weak self] (id, event, data) in
+            if let self = self, !self.closed {
+                responseClosure(.response(id: id ?? "", data: data ?? ""))
+            }
         }
-        
     }
     
     func close() {
-        eventSource.close()
-        eventSource = nil
+        closed = true
+        if let eventSource = eventSource {
+            eventSource.close()
+            self.eventSource = nil
+        }
     }
-    
 }

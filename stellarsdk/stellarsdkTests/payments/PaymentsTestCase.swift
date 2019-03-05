@@ -69,7 +69,7 @@ class PaymentsTestCase: XCTestCase {
     func testGetPaymentsForAccount() {
         let expectation = XCTestExpectation(description: "Get payments for account")
         
-        sdk.payments.getPayments (forAccount: "GD4FLXKATOO2Z4DME5BHLJDYF6UHUJS624CGA2FWTEVGUM4UZMXC7GVX") { (response) -> (Void) in
+        sdk.payments.getPayments (forAccount: "GDQZ4N3CMM3FL2HLYKZPF3JPZX3IRHI3SQKNSTEG6GMEA3OAW337EBA6") { (response) -> (Void) in
             switch response {
             case .success(_):
                 XCTAssert(true)
@@ -125,9 +125,8 @@ class PaymentsTestCase: XCTestCase {
         let expectation = XCTestExpectation(description: "Native payment successfully sent and received")
         
         do {
-            let sourceAccountKeyPair = try KeyPair(secretSeed:"SDXEJKRXYLTV344KWCRJ4PAGAJVXKGK3UGESRWBWLDEWYO4S5OQ6VQ6I")
-            //let sourceAccountKeyPair = try KeyPair(secretSeed:"SA3QF6XW433CBDLUEY5ZAMHYJLJNH4GOPASLJLO4QKH75HRRXZ3UM2YJ")
-            let destinationAccountKeyPair = try KeyPair(accountId: "GCKECJ5DYFZUX6DMTNJFHO2M4QKTUO5OS5JZ4EIIS7C3VTLIGXNGRTRC")
+            let sourceAccountKeyPair = try KeyPair(secretSeed:"SDBLUM623VOIEQWXD5FN6K7HOU5GUKUGD6SGWTW2BB3PPD5GVFG7RZU5")
+            let destinationAccountKeyPair = try KeyPair(secretSeed: "SDZ2TGEQ6IZETYLNVO4MOSOFRUVWY6D63EWIRTCT2S777TK3Z3R5JIFE")
             // printAccountDetails(tag: "SRP Test - source", accountId: sourceAccountKeyPair.accountId)
             // printAccountDetails(tag: "SRP Test - dest", accountId: destinationAccountKeyPair.accountId)
             
@@ -197,12 +196,12 @@ class PaymentsTestCase: XCTestCase {
         let expectation = XCTestExpectation(description: "Non native payment successfully sent and received")
         
         do {
-            let sourceAccountKeyPair = try KeyPair(secretSeed:"SA3QF6XW433CBDLUEY5ZAMHYJLJNH4GOPASLJLO4QKH75HRRXZ3UM2YJ")
-            let destinationAccountKeyPair = try KeyPair(accountId: "GAWE7LGEFNRN3QZL5ILVLYKKKGGVYCXXDCIBUJ3RVOC2ZWW6WLGK76TJ")
+            let sourceAccountKeyPair = try KeyPair(secretSeed:"SDBLUM623VOIEQWXD5FN6K7HOU5GUKUGD6SGWTW2BB3PPD5GVFG7RZU5")
+            let destinationAccountKeyPair = try KeyPair(secretSeed: "SDZ2TGEQ6IZETYLNVO4MOSOFRUVWY6D63EWIRTCT2S777TK3Z3R5JIFE")
             printAccountDetails(tag: "SRNNP Test - source", accountId: sourceAccountKeyPair.accountId)
             printAccountDetails(tag: "SRNNP Test - dest", accountId: destinationAccountKeyPair.accountId)
             
-            let issuingAccountKeyPair = try KeyPair(accountId: "GCXIZK3YMSKES64ATQWMQN5CX73EWHRHUSEZXIMHP5GYHXL5LNGCOGXU")
+            let issuingAccountKeyPair = try KeyPair(secretSeed: "SCBN2PQEOQLJUXSOMGQEJKWAZ52BSTBD7DEGLW2BEWLA3W62KVNHGBPL")
             let IOM = Asset(type: AssetType.ASSET_TYPE_CREDIT_ALPHANUM4, code: "IOM", issuer: issuingAccountKeyPair)
             
             sdk.payments.stream(for: .paymentsForAccount(account: destinationAccountKeyPair.accountId, cursor: "now")).onReceive { (response) -> (Void) in
@@ -307,7 +306,7 @@ class PaymentsTestCase: XCTestCase {
     func testPaymentsForAccountStream() {
         let expectation = XCTestExpectation(description: "Get response from stream")
         
-        sdk.payments.stream(for: .paymentsForAccount(account: "GD4FLXKATOO2Z4DME5BHLJDYF6UHUJS624CGA2FWTEVGUM4UZMXC7GVX", cursor: nil)).onReceive { (response) -> (Void) in
+        sdk.payments.stream(for: .paymentsForAccount(account: "GDQZ4N3CMM3FL2HLYKZPF3JPZX3IRHI3SQKNSTEG6GMEA3OAW337EBA6", cursor: nil)).onReceive { (response) -> (Void) in
             switch response {
             case .open:
                 break
