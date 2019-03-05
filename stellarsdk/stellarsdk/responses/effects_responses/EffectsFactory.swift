@@ -5,7 +5,6 @@
 //  Created by Razvan Chelemen on 02/02/2018.
 //  Copyright © 2018 Soneso. All rights reserved.
 //
-
 import Foundation
 
 ///  This class creates the different types of effect response classes depending on the effect type value from json.
@@ -68,6 +67,9 @@ class EffectsFactory: NSObject {
                 return effect
             case .accountFlagsUpdated:
                 let effect = try jsonDecoder.decode(AccountFlagsUpdatedEffectResponse.self, from: data)
+                return effect
+            case .accountInflationDestinationUpdated:
+                let effect = try jsonDecoder.decode(AccountInflationDestinationUpdatedEffectResponse.self, from: data)
                 return effect
             case .signerCreated:
                 let effect = try jsonDecoder.decode(SignerCreatedEffectResponse.self, from: data)
